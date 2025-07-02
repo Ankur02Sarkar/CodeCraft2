@@ -268,14 +268,6 @@ Enjoy coding! 🚀
               <Download size={16} />
               <span>Export</span>
             </motion.button>
-            <button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-              <Settings size={16} />
-              <span>Settings</span>
-            </button>
-            <button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-              <Play size={16} />
-              <span>Preview</span>
-            </button>
           </div>
         </div>
       </div>
