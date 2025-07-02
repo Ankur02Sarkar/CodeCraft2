@@ -25,7 +25,6 @@ export default {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
     <div id="root"></div>
@@ -33,34 +32,75 @@ export default {
 </html>`,
     },
     "/App.css": {
-      code: `
-            @tailwind base;
-@tailwind components;
-@tailwind utilities;`,
-    },
-    "/tailwind.config.js": {
-      code: `
-            /** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-}`,
-    },
-    "/postcss.config.js": {
-      code: `/** @type {import('postcss-load-config').Config} */
-const config = {
-  plugins: {
-    tailwindcss: {},
-  },
-};
+      code: `/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-export default config;
-`,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f5f5f5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Common utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.card {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}`,
     },
   },
   DEPENDENCY: {
@@ -81,8 +121,6 @@ export default config;
     react: "^18.0.0",
     "react-dom": "^18.0.0",
     "react-markdown": "^10.0.0",
-    "tailwind-merge": "^3.0.2",
-    "tailwindcss-animate": "^1.0.7",
     uuid4: "^2.0.3",
   },
   PRICING_DESC:
