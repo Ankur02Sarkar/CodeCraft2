@@ -55,7 +55,9 @@ const CreateInterface = () => {
     if (currentProject?.files) {
       const files: Record<string, string> = {};
       Object.entries(currentProject.files).forEach(([filename, file]) => {
-        files[`/${filename}`] = (file as ProjectFile).content;
+        // Normalize filename - ensure it starts with / for sandpack
+        const normalizedPath = filename.startsWith('/') ? filename : `/${filename}`;
+        files[normalizedPath] = (file as ProjectFile).content;
       });
       setSandpackFiles(files);
     }
@@ -93,6 +95,7 @@ const CreateInterface = () => {
     // Convert sandpack files back to ProjectFile format
     const projectFiles: Record<string, ProjectFile> = {};
     Object.entries(files).forEach(([path, content]) => {
+      // Normalize filename by removing leading slash for consistency
       const filename = path.startsWith('/') ? path.slice(1) : path;
       const extension = filename.split('.').pop() || 'js';
       const languageMap: Record<string, string> = {

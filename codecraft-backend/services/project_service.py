@@ -85,10 +85,12 @@ class ProjectService:
                 updated_files = {}
                 for filename, file_info in files_data.items():
                     if isinstance(file_info, dict) and "code" in file_info:
+                        # Normalize filename by removing leading slash if present
+                        normalized_filename = filename.lstrip('/')
                         # Determine language from file extension
-                        language = self._get_language_from_filename(filename)
-                        updated_files[filename] = ProjectFile(
-                            name=filename,
+                        language = self._get_language_from_filename(normalized_filename)
+                        updated_files[normalized_filename] = ProjectFile(
+                            name=normalized_filename,
                             content=file_info["code"],
                             language=language
                         )
@@ -141,9 +143,11 @@ class ProjectService:
         
         for filename, file_data in ai_files.items():
             if isinstance(file_data, dict) and "code" in file_data:
-                language = self._get_language_from_filename(filename)
-                project_files[filename] = ProjectFile(
-                    name=filename,
+                # Normalize filename by removing leading slash if present
+                normalized_filename = filename.lstrip('/')
+                language = self._get_language_from_filename(normalized_filename)
+                project_files[normalized_filename] = ProjectFile(
+                    name=normalized_filename,
                     content=file_data["code"],
                     language=language
                 )
