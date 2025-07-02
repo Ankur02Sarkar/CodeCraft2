@@ -9,6 +9,7 @@ import { ProjectFile } from "@/services/backendApi";
 import { useUser } from "@/hooks/useUser";
 import Prompt from "@/context/Prompt";
 import Lookup from "@/context/Lookup";
+import JSZip from "jszip";
 
 interface Message {
   id: string;
@@ -121,6 +122,96 @@ const CreateInterface = () => {
       console.error('Failed to update files:', err);
     }
   }, [currentProject, updateFiles]);
+
+  // Export function to download files as zip
+  const handleExport = async () => {
+    try {
+      const zip = new JSZip();
+      
+      // Add all files from sandpackFiles to the zip
+      Object.entries(sandpackFiles).forEach(([filePath, content]) => {
+        // Remove leading slash for cleaner file structure in zip
+        const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+        zip.file(cleanPath, content);
+      });
+      
+      // Add package.json if it doesn't exist
+      if (!sandpackFiles['/package.json'] && !sandpackFiles['package.json']) {
+        const packageJson = {
+          "name": currentProject?.title?.toLowerCase().replace(/\s+/g, '-') || "codecraft-project",
+          "version": "1.0.0",
+          "private": true,
+          "dependencies": {
+            "react": "^18.2.0",
+            "react-dom": "^18.2.0",
+            "lucide-react": "^0.303.0"
+          },
+          "scripts": {
+            "start": "react-scripts start",
+            "build": "react-scripts build",
+            "test": "react-scripts test",
+            "eject": "react-scripts eject"
+          },
+          "devDependencies": {
+            "react-scripts": "5.0.1"
+          },
+          "browserslist": {
+            "production": [
+              ">0.2%",
+              "not dead",
+              "not op_mini all"
+            ],
+            "development": [
+              "last 1 chrome version",
+              "last 1 firefox version",
+              "last 1 safari version"
+            ]
+          }
+        };
+        zip.file('package.json', JSON.stringify(packageJson, null, 2));
+      }
+      
+      // Add README.md
+      const readmeContent = `# ${currentProject?.title || 'CodeCraft Project'}
+
+This project was generated using CodeCraft AI.
+
+## Getting Started
+
+1. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
+
+2. Start the development server:
+   \`\`\`bash
+   npm start
+   \`\`\`
+
+3. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+## Project Structure
+
+${Object.keys(sandpackFiles).map(file => `- ${file}`).join('\n')}
+
+Enjoy coding! 🚀
+`;
+      zip.file('README.md', readmeContent);
+      
+      // Generate and download the zip file
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${currentProject?.title?.toLowerCase().replace(/\s+/g, '-') || 'codecraft-project'}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export project:', error);
+    }
+  };
 
   // Get messages from current project
   const messages = currentProject?.chat_history?.map((message: any) => ({
@@ -310,21 +401,7 @@ const CreateInterface = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Settings className="w-5 h-5 text-gray-600" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
-              >
-                <Play className="w-4 h-4" />
-                Run
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                onClick={handleExport}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
