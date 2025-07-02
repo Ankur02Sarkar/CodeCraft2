@@ -318,7 +318,7 @@ const ProjectDetailPage = () => {
                 <div className="text-center">
                   <Code className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Files Found</h3>
-                  <p className="text-gray-600">This project doesn't have any files yet.</p>
+                  <p className="text-gray-600">This project doesn&apos;t have any files yet.</p>
                 </div>
               </div>
             )}
