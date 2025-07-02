@@ -285,7 +285,7 @@ const ProjectDetailPage = () => {
                   bundlerURL: undefined,
                   visibleFiles: Object.keys(sandpackFiles),
                   activeFile: Object.keys(sandpackFiles)[0] || "/App.js",
-                  closableTabs: true,
+                  closableTabs: false,
                   showRefreshButton: true,
                   layout: "preview"
                 }}
