@@ -98,14 +98,42 @@ export function useBackendProject(): UseBackendProjectReturn {
     try {
       const chatResponse = await backendApi.chatWithProject(projectId, message);
       
-      // Reload the project to get updated chat history and files
-      await loadProject(projectId);
+      // If there are updated files in the response, update the current project immediately
+      if (chatResponse.updated_files && currentProject) {
+        const updatedProject = {
+          ...currentProject,
+          files: {
+            ...currentProject.files,
+            ...chatResponse.updated_files
+          },
+          chat_history: [
+            ...currentProject.chat_history,
+            {
+              id: Date.now().toString(),
+              content: message,
+              sender: 'user' as const,
+              timestamp: new Date().toISOString()
+            },
+            {
+              id: (Date.now() + 1).toString(),
+              content: chatResponse.message,
+              sender: 'ai' as const,
+              timestamp: chatResponse.timestamp
+            }
+          ],
+          updated_at: new Date().toISOString()
+        };
+        setCurrentProject(updatedProject);
+      } else {
+        // Reload the project to get updated chat history
+        await loadProject(projectId);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);
     }
-  }, [loadProject]);
+  }, [loadProject, currentProject]);
 
   const updateFiles = useCallback(async (projectId: string, files: ProjectFile[]) => {
     setIsLoading(true);
