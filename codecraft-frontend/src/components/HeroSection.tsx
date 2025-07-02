@@ -149,41 +149,6 @@ const HeroSection = () => {
             Experience the future of web development.
           </motion.p>
 
-          {/* Search bar */}
-          <motion.div variants={itemVariants} className="relative max-w-3xl mx-auto w-full">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-4 flex items-center shadow-xl"
-            >
-              {/* <motion.button
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-3 rounded-xl hover:bg-gray-100 transition-all"
-              >
-                <Paperclip className="w-5 h-5 text-gray-500" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: -5 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 transition-all"
-              >
-                <Sparkles className="w-5 h-5 text-purple-500" />
-              </motion.button> */}
-              <input
-                type="text"
-                placeholder="How can CodeCraft help you today?"
-                className="bg-transparent flex-1 outline-none text-gray-700 placeholder-gray-400 pl-4 text-lg"
-              />
-              <motion.button
-                whileHover={{ scale: 1.05, x: 5 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white p-3 rounded-xl hover:shadow-lg transition-all"
-              >
-                <ArrowRight className="w-5 h-5" />
-              </motion.button>
-            </motion.div>
-          </motion.div>
-
           {/* CTA Buttons */}
           <motion.div
             variants={itemVariants}
@@ -216,7 +181,7 @@ const HeroSection = () => {
           </motion.div>
 
           {/* Suggestion pills */}
-          <motion.div
+          {/* <motion.div
             variants={itemVariants}
             className="flex flex-wrap justify-center gap-3 mt-16 max-w-4xl mx-auto"
           >
@@ -239,7 +204,7 @@ const HeroSection = () => {
                 {text}
               </motion.button>
             ))}
-          </motion.div>
+          </motion.div> */}
         </motion.div>
       </main>
     </div>

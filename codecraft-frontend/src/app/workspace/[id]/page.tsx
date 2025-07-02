@@ -294,11 +294,11 @@ const ProjectDetailPage = () => {
                   }
                 }}
               >
-                <SandpackLayout>
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '80vh' }}>
+                <SandpackLayout style={{width:"100%"}}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '80vh', width:"50%", overflow:"scroll" }}>
                     <SandpackFileExplorer style={{ height: '200px', borderBottom: '1px solid #333' }} />
                     <SandpackCodeEditor
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, overflowY : "scroll" }}
                       showTabs={true}
                       closableTabs={true}
                       showLineNumbers={true}
@@ -307,7 +307,7 @@ const ProjectDetailPage = () => {
                     />
                   </div>
                   <SandpackPreview
-                    style={{height:"80vh"}}
+                    style={{height:"80vh", width:"50%"}}
                     showNavigator={true}
                     showRefreshButton={true}
                   />
