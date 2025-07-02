@@ -5,7 +5,8 @@ import { Plus, Globe, Code, Calendar, MoreVertical, MessageSquare, FileCode } fr
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
-import { useProject, Project } from "@/hooks/useProject";
+import { useBackendProject } from "@/hooks/useBackendProject";
+import { Project } from "@/services/backendApi";
 import { Id } from "../../convex/_generated/dataModel";
 
 interface ProjectStats {
@@ -16,7 +17,7 @@ interface ProjectStats {
 
 const WorkspaceGrid = () => {
   const { user } = useUser();
-  const { projects, loadUserProjects, isLoading, error } = useProject();
+  const { projects, loadUserProjects, isLoading, error } = useBackendProject();
   const [stats, setStats] = useState<ProjectStats>({ total: 0, thisWeek: 0, published: 0 });
 
   // Load user projects on component mount
@@ -31,7 +32,7 @@ const WorkspaceGrid = () => {
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    const thisWeekCount = projects.filter(project => {
+    const thisWeekCount = projects.filter((project: Project) => {
       const createdAt = new Date(project.created_at);
       return createdAt >= oneWeekAgo;
     }).length;
@@ -220,14 +221,14 @@ const WorkspaceGrid = () => {
                   <div className="flex items-center space-x-2">
                     <FileCode className="text-blue-400" size={24} />
                     <span className="text-sm text-blue-600 font-medium">
-                      {project.files?.length || 0} files
+                      {Object.keys(project.files || {}).length} files
                     </span>
                   </div>
-                  {project.chat_messages && project.chat_messages.length > 0 && (
+                  {project.chat_history && project.chat_history.length > 0 && (
                     <div className="flex items-center space-x-1">
                       <MessageSquare className="text-green-400" size={16} />
                       <span className="text-xs text-green-600">
-                        {project.chat_messages.length}
+                        {project.chat_history.length}
                       </span>
                     </div>
                   )}
@@ -247,7 +248,7 @@ const WorkspaceGrid = () => {
 
                   {/* Project Info */}
                   <h3 className="font-semibold text-gray-900 mb-1 truncate">
-                    {project.name}
+                    {project.title}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                     {project.description || 'No description available'}

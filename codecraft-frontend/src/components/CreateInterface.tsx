@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Send, Code, Play, Download, Settings, Sparkles, MessageSquare, Save } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Sandpack } from "@codesandbox/sandpack-react";
 import { useBackendProject } from "@/hooks/useBackendProject";
 import { ProjectFile } from "@/services/backendApi";
@@ -19,6 +20,7 @@ interface Message {
 }
 
 const CreateInterface = () => {
+  const router = useRouter();
   const { user } = useUser();
   const {
     currentProject,
@@ -64,6 +66,13 @@ const CreateInterface = () => {
     }
   }, [currentProject?.files]);
 
+  // Navigate to workspace when project is created
+  useEffect(() => {
+    if (currentProject?.id && !window.location.pathname.includes('/workspace/')) {
+      router.push(`/workspace/${currentProject.id}`);
+    }
+  }, [currentProject?.id, router]);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || !user) return;
     
@@ -76,6 +85,8 @@ const CreateInterface = () => {
           "react",
           user.id
         );
+        // Navigate to workspace after project creation
+        // Note: currentProject will be updated after createProject completes
       } else {
         // Send chat message to existing project
         await sendChatMessage(

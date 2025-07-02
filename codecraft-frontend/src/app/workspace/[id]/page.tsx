@@ -6,9 +6,9 @@ import { motion } from "framer-motion";
 import { ArrowLeft, MessageSquare, Code, Save, Play, Settings } from "lucide-react";
 import Link from "next/link";
 import { Sandpack } from "@codesandbox/sandpack-react";
-import { useProject, Project, ChatMessage } from "@/hooks/useProject";
+import { useBackendProject } from "@/hooks/useBackendProject";
+import { Project, ChatMessage } from "@/services/backendApi";
 import { useUser } from "@/hooks/useUser";
-import { Id } from "../../../../convex/_generated/dataModel";
 
 interface SandpackFile {
   code: string;
@@ -25,7 +25,7 @@ const ProjectDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const { user } = useUser();
-  const { currentProject, loadProject, updateFiles, sendChatMessage, isLoading, error } = useProject();
+  const { currentProject, loadProject, updateFiles, sendChatMessage, isLoading, error } = useBackendProject();
   const [chatInput, setChatInput] = useState("");
   const [sandpackFiles, setSandpackFiles] = useState<SandpackFiles>({});
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -43,10 +43,12 @@ const ProjectDetailPage = () => {
   useEffect(() => {
     if (currentProject?.files) {
       const files: SandpackFiles = {};
-      currentProject.files.forEach((file) => {
-        files[file.path] = {
+      Object.entries(currentProject.files).forEach(([filename, file]) => {
+        // Normalize filename - ensure it starts with / for sandpack
+        const normalizedPath = filename.startsWith('/') ? filename : `/${filename}`;
+        files[normalizedPath] = {
           code: file.content,
-          hidden: file.path.includes('node_modules') || file.path.includes('.git'),
+          hidden: normalizedPath.includes('node_modules') || normalizedPath.includes('.git'),
         };
       });
       setSandpackFiles(files);
@@ -58,7 +60,7 @@ const ProjectDetailPage = () => {
 
     setIsChatLoading(true);
     try {
-      await sendChatMessage(currentProject.id, chatInput, user.id as Id<'users'>);
+      await sendChatMessage(currentProject.id, chatInput);
       setChatInput("");
     } catch (error) {
       console.error('Error sending message:', error);
@@ -68,14 +70,18 @@ const ProjectDetailPage = () => {
   };
 
   const handleFilesChange = async (files: SandpackFiles) => {
-    if (!currentProject) return;
+    if (!currentProject || !user) return;
 
     // Convert Sandpack files back to ProjectFile format
-    const projectFiles = Object.entries(files).map(([path, file]) => ({
-      path,
-      content: typeof file === 'string' ? file : file.code,
-      language: getFileLanguage(path),
-    }));
+    const projectFiles = Object.entries(files).map(([path, file]) => {
+      // Normalize filename by removing leading slash for consistency
+      const filename = path.startsWith('/') ? path.slice(1) : path;
+      return {
+        name: filename,
+        content: typeof file === 'string' ? file : file.code,
+        language: getFileLanguage(path),
+      };
+    });
 
     try {
       await updateFiles(currentProject.id, projectFiles);
@@ -147,7 +153,7 @@ const ProjectDetailPage = () => {
               <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">{currentProject.name}</h1>
+              <h1 className="text-xl font-semibold text-gray-900">{currentProject.title}</h1>
               <p className="text-sm text-gray-600">
                 Last modified {formatTimeAgo(currentProject.updated_at)}
               </p>
@@ -178,18 +184,18 @@ const ProjectDetailPage = () => {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {currentProject.chat_messages?.map((message: ChatMessage, index: number) => (
+            {currentProject.chat_history?.map((message: ChatMessage, index: number) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                  message.sender === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
-                    message.role === 'user'
+                    message.sender === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-900'
                   }`}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { backendApi, Project, ProjectFile, ChatMessage } from '@/services/backendApi';
 
 export interface UseBackendProjectReturn {
