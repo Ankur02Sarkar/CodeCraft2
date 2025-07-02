@@ -4,9 +4,11 @@ import { motion } from "framer-motion";
 import { Send, Code, Play, Download, Settings, Sparkles, MessageSquare, Save } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Sandpack } from "@codesandbox/sandpack-react";
-import { useProject, ProjectFile } from "@/hooks/useProject";
+import { useBackendProject } from "@/hooks/useBackendProject";
+import { ProjectFile } from "@/services/backendApi";
 import { useUser } from "@/hooks/useUser";
-import { Id } from "../../convex/_generated/dataModel";
+import Prompt from "@/context/Prompt";
+import Lookup from "@/context/Lookup";
 
 interface Message {
   id: string;
@@ -25,24 +27,27 @@ const CreateInterface = () => {
     sendChatMessage,
     updateFiles,
     clearError
-  } = useProject();
+  } = useBackendProject();
   
   const [inputValue, setInputValue] = useState("");
-  const [sandpackFiles, setSandpackFiles] = useState<Record<string, string>>({
-    "/App.js": `export default function App() {
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [sandpackFiles, setSandpackFiles] = useState<Record<string, string>>(() => {
+    const defaultFiles: Record<string, string> = {};
+    Object.entries(Lookup.DEFAULT_FILE).forEach(([path, fileData]) => {
+      defaultFiles[path] = fileData.code;
+    });
+    // Add default App.js if not present
+    if (!defaultFiles["/App.js"]) {
+      defaultFiles["/App.js"] = `export default function App() {
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>Welcome to CodeCraft</h1>
-      <p>Start chatting to generate your website!</p>
+    <div className="p-8 text-center">
+      <h1 className="text-3xl font-bold text-blue-600 mb-4">Welcome to CodeCraft</h1>
+      <p className="text-gray-600">Start chatting to generate your website!</p>
     </div>
   );
-}`,
-    "/index.js": `import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);`
+}`;
+    }
+    return defaultFiles;
   });
 
   // Convert project files to sandpack format
@@ -50,7 +55,7 @@ root.render(<App />);`
     if (currentProject?.files) {
       const files: Record<string, string> = {};
       Object.entries(currentProject.files).forEach(([filename, file]) => {
-        files[`/${filename}`] = file.content;
+        files[`/${filename}`] = (file as ProjectFile).content;
       });
       setSandpackFiles(files);
     }
@@ -65,15 +70,15 @@ root.render(<App />);`
         await createProject(
           "New Website",
           inputValue,
-          undefined,
-          user.id as Id<'users'>
+          "react",
+          user.id
         );
       } else {
         // Send chat message to existing project
         await sendChatMessage(
           currentProject.id,
           inputValue,
-          user.id as Id<'users'>
+          user.id
         );
       }
       setInputValue("");
@@ -101,7 +106,7 @@ root.render(<App />);`
       };
       
       projectFiles[filename] = {
-        path: filename,
+        name: filename,
         content,
         language: languageMap[extension] || 'javascript'
       };
@@ -115,11 +120,11 @@ root.render(<App />);`
   }, [currentProject, updateFiles]);
 
   // Get messages from current project
-  const messages = currentProject?.chat_messages?.map((msg: any) => ({
-    id: msg.id || Math.random().toString(),
-    content: msg.content,
-    sender: msg.role === 'user' ? 'user' : 'ai' as "user" | "ai",
-    timestamp: new Date(msg.timestamp)
+  const messages = currentProject?.chat_history?.map((message: any) => ({
+    id: message.id || Math.random().toString(),
+    content: message.content,
+    sender: message.sender as "user" | "ai",
+    timestamp: new Date(message.timestamp)
   })) || [
     {
       id: "1",
@@ -225,15 +230,43 @@ root.render(<App />);`
           )}
         </div>
 
+        {/* Suggestions */}
+        {showSuggestions && messages.length <= 1 && (
+          <div className="p-6 border-t border-gray-200/50">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Start Ideas:</h3>
+            <div className="grid grid-cols-1 gap-2">
+              {Lookup.SUGGESTIONS.map((suggestion, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setInputValue(suggestion);
+                    setShowSuggestions(false);
+                  }}
+                  className="text-left p-3 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-gray-700"
+                >
+                  {suggestion}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Input */}
         <div className="p-6 border-t border-gray-200/50">
           <div className="flex gap-3">
             <input
               type="text"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                if (e.target.value.trim()) {
+                  setShowSuggestions(false);
+                }
+              }}
               onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              placeholder="Describe what you want to build..."
+              placeholder={Lookup.INPUT_PLACEHOLDER}
               className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/90 backdrop-blur-sm"
             />
             <motion.button
@@ -330,10 +363,12 @@ root.render(<App />);`
                 wrapContent: true,
                 editorHeight: 400,
                 autorun: true,
-                autoReload: true
+                autoReload: true,
+                bundlerURL: undefined
               }}
               customSetup={{
                 dependencies: {
+                  ...Lookup.DEPENDENCY,
                   "react": "^18.0.0",
                   "react-dom": "^18.0.0"
                 }

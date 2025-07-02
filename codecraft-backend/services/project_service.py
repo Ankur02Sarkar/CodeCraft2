@@ -22,7 +22,7 @@ class ProjectService:
             ai_response = self.ai_model.send_message(request.prompt)
             
             # Parse the JSON response from AI
-            response_data = json.loads(ai_response)
+            response_data = json.loads(ai_response.text)
             
             # Extract project information
             project_title = response_data.get("project_title", "Untitled Project")
@@ -77,8 +77,8 @@ class ProjectService:
             
             # Parse response
             try:
-                response_data = json.loads(ai_response)
-                explanation = response_data.get("explanation", ai_response)
+                response_data = json.loads(ai_response.text)
+                explanation = response_data.get("explanation", ai_response.text)
                 files_data = response_data.get("files", {})
                 
                 # Convert updated files
@@ -103,7 +103,7 @@ class ProjectService:
             except json.JSONDecodeError:
                 # If not JSON, treat as plain text response
                 return ChatResponse(
-                    message=ai_response,
+                    message=ai_response.text,
                     sender="ai",
                     timestamp=datetime.now(),
                     updated_files=None
