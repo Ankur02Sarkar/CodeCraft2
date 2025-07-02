@@ -364,10 +364,17 @@ const CreateInterface = () => {
                 showLineNumbers: true,
                 showInlineErrors: true,
                 wrapContent: true,
-                editorHeight: 400,
+                editorHeight: "80vh",
                 autorun: true,
                 autoReload: true,
-                bundlerURL: undefined
+                bundlerURL: undefined,
+                visibleFiles: Object.keys(sandpackFiles),
+                activeFile: Object.keys(sandpackFiles)[0] || "/App.js",
+                closableTabs: false,
+                showConsole: true,
+                showConsoleButton: true,
+                showRefreshButton: true,
+                layout: "preview"
               }}
               customSetup={{
                 dependencies: {
