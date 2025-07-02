@@ -5,7 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, MessageSquare, Code, Save, Play, Settings } from "lucide-react";
 import Link from "next/link";
-import { Sandpack } from "@codesandbox/sandpack-react";
+import { 
+  SandpackProvider,
+  SandpackLayout,
+  SandpackCodeEditor,
+  SandpackPreview,
+  SandpackFileExplorer
+} from "@codesandbox/sandpack-react";
 import { useBackendProject } from "@/hooks/useBackendProject";
 import { Project, ChatMessage } from "@/services/backendApi";
 import { useUser } from "@/hooks/useUser";
@@ -269,25 +275,16 @@ const ProjectDetailPage = () => {
           {/* Sandpack Editor */}
           <div className="flex-1">
             {Object.keys(sandpackFiles).length > 0 ? (
-              <Sandpack
+              <SandpackProvider
                 template="react"
                 theme="dark"
                 files={sandpackFiles}
                 options={{
-                  showNavigator: true,
-                  showTabs: true,
-                  showLineNumbers: true,
-                  showInlineErrors: true,
-                  wrapContent: true,
-                  editorHeight: "80vh",
                   autorun: true,
                   autoReload: true,
                   bundlerURL: undefined,
                   visibleFiles: Object.keys(sandpackFiles),
-                  activeFile: Object.keys(sandpackFiles)[0] || "/App.js",
-                  closableTabs: false,
-                  showRefreshButton: true,
-                  layout: "preview"
+                  activeFile: Object.keys(sandpackFiles)[0] || "/App.js"
                 }}
                 customSetup={{
                   dependencies: {
@@ -296,7 +293,26 @@ const ProjectDetailPage = () => {
                     "react-dom": "^18.0.0"
                   }
                 }}
-              />
+              >
+                <SandpackLayout>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '80vh' }}>
+                    <SandpackFileExplorer style={{ height: '200px', borderBottom: '1px solid #333' }} />
+                    <SandpackCodeEditor
+                      style={{ flex: 1 }}
+                      showTabs={true}
+                      closableTabs={true}
+                      showLineNumbers={true}
+                      showInlineErrors={true}
+                      wrapContent={true}
+                    />
+                  </div>
+                  <SandpackPreview
+                    style={{height:"80vh"}}
+                    showNavigator={true}
+                    showRefreshButton={true}
+                  />
+                </SandpackLayout>
+              </SandpackProvider>
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-100">
                 <div className="text-center">

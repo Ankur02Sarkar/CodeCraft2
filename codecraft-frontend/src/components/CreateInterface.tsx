@@ -4,7 +4,13 @@ import { motion } from "framer-motion";
 import { Send, Code, Play, Download, Settings, Sparkles, MessageSquare, Save } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Sandpack } from "@codesandbox/sandpack-react";
+import { 
+  SandpackProvider,
+  SandpackLayout,
+  SandpackCodeEditor,
+  SandpackPreview,
+  SandpackFileExplorer
+} from "@codesandbox/sandpack-react";
 import { useBackendProject } from "@/hooks/useBackendProject";
 import { ProjectFile } from "@/services/backendApi";
 import { useUser } from "@/hooks/useUser";
@@ -442,25 +448,16 @@ Enjoy coding! 🚀
               </div>
             )}
             
-            <Sandpack
+            <SandpackProvider
               template="react"
               files={sandpackFiles}
               theme="dark"
               options={{
-                showNavigator: true,
-                showTabs: true,
-                showLineNumbers: true,
-                showInlineErrors: true,
-                wrapContent: true,
-                editorHeight: "80vh",
                 autorun: true,
                 autoReload: true,
                 bundlerURL: undefined,
                 visibleFiles: Object.keys(sandpackFiles),
-                activeFile: Object.keys(sandpackFiles)[0] || "/App.js",
-                closableTabs: false,
-                showRefreshButton: true,
-                layout: "preview"
+                activeFile: Object.keys(sandpackFiles)[0] || "/App.js"
               }}
               customSetup={{
                 dependencies: {
@@ -469,7 +466,26 @@ Enjoy coding! 🚀
                   "react-dom": "^18.0.0"
                 }
               }}
-            />
+            >
+              <SandpackLayout>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '80vh' }}>
+                  <SandpackFileExplorer style={{ height: '200px', borderBottom: '1px solid #333' }} />
+                  <SandpackCodeEditor
+                    style={{ flex: 1 }}
+                    showTabs={true}
+                    closableTabs={true}
+                    showLineNumbers={true}
+                    showInlineErrors={true}
+                    wrapContent={true}
+                  />
+                </div>
+                <SandpackPreview
+                  style={{height:"80vh"}}
+                  showNavigator={true}
+                  showRefreshButton={true}
+                />
+              </SandpackLayout>
+            </SandpackProvider>
           </motion.div>
         </div>
       </motion.div>
