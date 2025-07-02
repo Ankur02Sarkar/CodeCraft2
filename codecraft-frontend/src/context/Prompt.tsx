@@ -14,8 +14,6 @@ Generate a Project in React app. Create multiple components, organizing them in 
 
 You can use icons from the lucide-react library when necessary. Available icons include: Heart, Shield, Clock, Users, Play, Home, Search, Menu, User, Settings, Mail, Bell, Calendar, Star, Upload, Download, Trash, Edit, Plus, Minus, Check, X, and ArrowRight. For example, you can import an icon as import { Heart } from "lucide-react" and use it in JSX as <Heart className="icon" />.
 
-Also include a file tree view component in the sandbox that shows all the project files in a collapsible tree structure.
-
 You can also use date-fns for date format and react-chartjs-2 chart, graph library when needed.
 
 Return the response in JSON format with the following schema:
