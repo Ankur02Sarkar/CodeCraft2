@@ -61,7 +61,6 @@ Guidelines:
 - After creating the project, update package.json file
 - Get images from web/internet but only working not broken
 - Do not download the images, only link to them in image tags
-- Always include a FileTree component that displays the project structure in a collapsible tree view
    `,
 };
 
