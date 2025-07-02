@@ -9,6 +9,7 @@ import { Sandpack } from "@codesandbox/sandpack-react";
 import { useBackendProject } from "@/hooks/useBackendProject";
 import { Project, ChatMessage } from "@/services/backendApi";
 import { useUser } from "@/hooks/useUser";
+import Lookup from "@/context/Lookup";
 
 interface SandpackFile {
   code: string;
@@ -278,14 +279,22 @@ const ProjectDetailPage = () => {
                   showLineNumbers: true,
                   showInlineErrors: true,
                   wrapContent: true,
-                  editorHeight: '100%',
-                  layout: 'preview',
+                  editorHeight: "80vh",
+                  autorun: true,
+                  autoReload: true,
+                  bundlerURL: undefined,
+                  visibleFiles: Object.keys(sandpackFiles),
+                  activeFile: Object.keys(sandpackFiles)[0] || "/App.js",
+                  closableTabs: true,
+                  showRefreshButton: true,
+                  layout: "preview"
                 }}
                 customSetup={{
                   dependencies: {
-                    'react': '^18.0.0',
-                    'react-dom': '^18.0.0',
-                  },
+                    ...Lookup.DEPENDENCY,
+                    "react": "^18.0.0",
+                    "react-dom": "^18.0.0"
+                  }
                 }}
               />
             ) : (

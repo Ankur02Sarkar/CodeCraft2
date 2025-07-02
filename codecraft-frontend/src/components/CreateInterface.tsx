@@ -458,9 +458,7 @@ Enjoy coding! 🚀
                 bundlerURL: undefined,
                 visibleFiles: Object.keys(sandpackFiles),
                 activeFile: Object.keys(sandpackFiles)[0] || "/App.js",
-                closableTabs: false,
-                showConsole: true,
-                showConsoleButton: true,
+                closableTabs: true,
                 showRefreshButton: true,
                 layout: "preview"
               }}
