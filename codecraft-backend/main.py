@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import uvicorn
 
 app = FastAPI()
 
@@ -52,3 +53,7 @@ async def delete_item(item_id: int):
 @app.get("/health")
 async def health_check():
     return {"message": "Health check successful"}
+
+# This is important for Vercel
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
