@@ -3,3 +3,4 @@ uvicorn[standard]
 httpx
 email-validator
 python-dotenv
+google-generativeai

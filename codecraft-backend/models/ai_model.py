@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 
@@ -11,39 +12,35 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-# Create the model
+# Create the model with generation config
 model = genai.GenerativeModel(
     model_name="gemini-2.0-flash",
+    generation_config={
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_output_tokens": 8192,
+    }
 )
-
-# Generation configuration
-generation_config = {
-    "temperature": 1,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
-
-code_generation_config = {
-    "temperature": 1,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 8192,
-    "response_mime_type": "application/json",
-}
 
 # Chat session for general use
-chat_session = model.start_chat(
-    generation_config=generation_config,
-    history=[]
-)
+chat_session = model.start_chat(history=[])
 
 # Chat session for code generation
 class GenAICodeClass:
     def __init__(self):
-        self.chat_session = model.start_chat(
-            generation_config=code_generation_config,
+        # Create a separate model for code generation with JSON response
+        self.code_model = genai.GenerativeModel(
+            model_name="gemini-2.0-flash",
+            generation_config={
+                "temperature": 1,
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 8192,
+                "response_mime_type": "application/json",
+            }
+        )
+        self.chat_session = self.code_model.start_chat(
             history=[
                 {
                     "role": "user",

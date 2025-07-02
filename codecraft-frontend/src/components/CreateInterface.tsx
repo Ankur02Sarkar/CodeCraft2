@@ -1,8 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Send, Code, Play, Download, Settings, Sparkles, MessageSquare } from "lucide-react";
-import { useState } from "react";
+import { Send, Code, Play, Download, Settings, Sparkles, MessageSquare, Save } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Sandpack } from "@codesandbox/sandpack-react";
+import { useProject, ProjectFile } from "@/hooks/useProject";
+import { useUser } from "@/hooks/useUser";
+import { Id } from "../../convex/_generated/dataModel";
 
 interface Message {
   id: string;
@@ -12,43 +16,118 @@ interface Message {
 }
 
 const CreateInterface = () => {
-  const [messages, setMessages] = useState<Message[]>([
+  const { user } = useUser();
+  const {
+    currentProject,
+    isLoading,
+    error,
+    createProject,
+    sendChatMessage,
+    updateFiles,
+    clearError
+  } = useProject();
+  
+  const [inputValue, setInputValue] = useState("");
+  const [sandpackFiles, setSandpackFiles] = useState<Record<string, string>>({
+    "/App.js": `export default function App() {
+  return (
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <h1>Welcome to CodeCraft</h1>
+      <p>Start chatting to generate your website!</p>
+    </div>
+  );
+}`,
+    "/index.js": `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);`
+  });
+
+  // Convert project files to sandpack format
+  useEffect(() => {
+    if (currentProject?.files) {
+      const files: Record<string, string> = {};
+      Object.entries(currentProject.files).forEach(([filename, file]) => {
+        files[`/${filename}`] = file.content;
+      });
+      setSandpackFiles(files);
+    }
+  }, [currentProject?.files]);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || !user) return;
+    
+    try {
+      if (!currentProject) {
+        // Create new project with initial prompt
+        await createProject(
+          "New Website",
+          inputValue,
+          undefined,
+          user.id as Id<'users'>
+        );
+      } else {
+        // Send chat message to existing project
+        await sendChatMessage(
+          currentProject.id,
+          inputValue,
+          user.id as Id<'users'>
+        );
+      }
+      setInputValue("");
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    }
+  };
+
+  const handleFilesChange = useCallback(async (files: Record<string, string>) => {
+    if (!currentProject) return;
+    
+    // Convert sandpack files back to ProjectFile format
+    const projectFiles: Record<string, ProjectFile> = {};
+    Object.entries(files).forEach(([path, content]) => {
+      const filename = path.startsWith('/') ? path.slice(1) : path;
+      const extension = filename.split('.').pop() || 'js';
+      const languageMap: Record<string, string> = {
+        'js': 'javascript',
+        'jsx': 'javascript',
+        'ts': 'typescript',
+        'tsx': 'typescript',
+        'css': 'css',
+        'html': 'html',
+        'json': 'json'
+      };
+      
+      projectFiles[filename] = {
+        path: filename,
+        content,
+        language: languageMap[extension] || 'javascript'
+      };
+    });
+    
+    try {
+      await updateFiles(currentProject.id, Object.values(projectFiles));
+    } catch (err) {
+      console.error('Failed to update files:', err);
+    }
+  }, [currentProject, updateFiles]);
+
+  // Get messages from current project
+  const messages = currentProject?.chat_messages?.map((msg: any) => ({
+    id: msg.id || Math.random().toString(),
+    content: msg.content,
+    sender: msg.role === 'user' ? 'user' : 'ai' as "user" | "ai",
+    timestamp: new Date(msg.timestamp)
+  })) || [
     {
       id: "1",
       content: "Hello! I'm CodeCraft AI. I can help you build amazing websites. What would you like to create today?",
-      sender: "ai",
+      sender: "ai" as const,
       timestamp: new Date(),
     },
-  ]);
-  const [inputValue, setInputValue] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: inputValue,
-      sender: "user",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
-    setInputValue("");
-    setIsGenerating(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "I'll help you create that! Let me generate the code for you. This might take a few moments...",
-        sender: "ai",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-      setIsGenerating(false);
-    }, 2000);
-  };
+  ];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -126,7 +205,7 @@ const CreateInterface = () => {
             </motion.div>
           ))}
           
-          {isGenerating && (
+          {isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -161,7 +240,7 @@ const CreateInterface = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isGenerating}
+              disabled={!inputValue.trim() || isLoading}
               className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5" />
@@ -219,83 +298,47 @@ const CreateInterface = () => {
           </div>
         </div>
 
-        {/* Code Content */}
+        {/* Sandpack Code Editor */}
         <div className="flex-1 p-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="h-full bg-gray-900 rounded-xl overflow-hidden shadow-xl"
+            className="h-full rounded-xl overflow-hidden shadow-xl"
           >
-            {/* Code Editor Mockup */}
-            <div className="bg-gray-800 px-4 py-3 flex items-center gap-2">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-red-600 text-sm">{error}</p>
+                <button 
+                  onClick={clearError}
+                  className="text-red-500 hover:text-red-700 text-xs mt-2 underline"
+                >
+                  Dismiss
+                </button>
               </div>
-              <span className="text-gray-400 text-sm ml-4">index.html</span>
-            </div>
+            )}
             
-            <div className="p-6 text-gray-300 font-mono text-sm leading-relaxed">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.5 }}
-              >
-                <div className="text-blue-400">&lt;!DOCTYPE html&gt;</div>
-                <div className="text-blue-400">&lt;html lang="en"&gt;</div>
-                <div className="ml-4">
-                  <div className="text-blue-400">&lt;head&gt;</div>
-                  <div className="ml-4 text-green-400">// Generated by CodeCraft AI</div>
-                  <div className="ml-4 text-blue-400">&lt;title&gt;<span className="text-yellow-400">My Awesome Website</span>&lt;/title&gt;</div>
-                  <div className="text-blue-400">&lt;/head&gt;</div>
-                </div>
-                <div className="ml-4">
-                  <div className="text-blue-400">&lt;body&gt;</div>
-                  <div className="ml-8 text-purple-400">&lt;div className="container"&gt;</div>
-                  <div className="ml-12 text-blue-400">&lt;h1&gt;<span className="text-yellow-400">Welcome to the Future</span>&lt;/h1&gt;</div>
-                  <div className="ml-12 text-blue-400">&lt;p&gt;<span className="text-yellow-400">Built with CodeCraft AI</span>&lt;/p&gt;</div>
-                  <div className="ml-8 text-purple-400">&lt;/div&gt;</div>
-                  <div className="text-blue-400">&lt;/body&gt;</div>
-                </div>
-                <div className="text-blue-400">&lt;/html&gt;</div>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Preview Section */}
-        <div className="p-6 border-t border-gray-200/50 bg-white/80">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white rounded-xl border border-gray-200 p-6 shadow-lg"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Preview</span>
-            </div>
-            
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center">
-              <motion.h1
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2"
-              >
-                Welcome to the Future
-              </motion.h1>
-              <motion.p
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-                className="text-gray-600"
-              >
-                Built with CodeCraft AI
-              </motion.p>
-            </div>
+            <Sandpack
+              template="react"
+              files={sandpackFiles}
+              theme="dark"
+              options={{
+                showNavigator: true,
+                showTabs: true,
+                showLineNumbers: true,
+                showInlineErrors: true,
+                wrapContent: true,
+                editorHeight: 400,
+                autorun: true,
+                autoReload: true
+              }}
+              customSetup={{
+                dependencies: {
+                  "react": "^18.0.0",
+                  "react-dom": "^18.0.0"
+                }
+              }}
+            />
           </motion.div>
         </div>
       </motion.div>

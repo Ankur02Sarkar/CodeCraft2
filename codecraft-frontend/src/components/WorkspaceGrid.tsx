@@ -1,50 +1,48 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Plus, Globe, Code, Calendar, MoreVertical } from "lucide-react";
+import { Plus, Globe, Code, Calendar, MoreVertical, MessageSquare, FileCode } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useUser } from "@/hooks/useUser";
+import { useProject, Project } from "@/hooks/useProject";
+import { Id } from "../../convex/_generated/dataModel";
 
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  lastModified: string;
-  status: "published" | "draft" | "building";
-  thumbnail?: string;
+interface ProjectStats {
+  total: number;
+  thisWeek: number;
+  published: number;
 }
 
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    name: "E-commerce Dashboard",
-    description: "Modern admin dashboard for online store management",
-    lastModified: "2 hours ago",
-    status: "published",
-  },
-  {
-    id: "2",
-    name: "Portfolio Website",
-    description: "Personal portfolio with dark mode and animations",
-    lastModified: "1 day ago",
-    status: "draft",
-  },
-  {
-    id: "3",
-    name: "Blog Platform",
-    description: "Full-stack blog with CMS and comment system",
-    lastModified: "3 days ago",
-    status: "building",
-  },
-  {
-    id: "4",
-    name: "Landing Page",
-    description: "SaaS product landing page with pricing tiers",
-    lastModified: "1 week ago",
-    status: "published",
-  },
-];
-
 const WorkspaceGrid = () => {
+  const { user } = useUser();
+  const { projects, loadUserProjects, isLoading, error } = useProject();
+  const [stats, setStats] = useState<ProjectStats>({ total: 0, thisWeek: 0, published: 0 });
+
+  // Load user projects on component mount
+  useEffect(() => {
+    if (user?.id) {
+      loadUserProjects(user.id as Id<'users'>);
+    }
+  }, [user?.id, loadUserProjects]);
+
+  // Calculate stats when projects change
+  useEffect(() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const thisWeekCount = projects.filter(project => {
+      const createdAt = new Date(project.created_at);
+      return createdAt >= oneWeekAgo;
+    }).length;
+    
+    setStats({
+      total: projects.length,
+      thisWeek: thisWeekCount,
+      published: projects.length // For now, consider all projects as published
+    });
+  }, [projects]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -68,18 +66,40 @@ const WorkspaceGrid = () => {
     },
   };
 
-  const getStatusColor = (status: Project["status"]) => {
-    switch (status) {
-      case "published":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "draft":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "building":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    return `${diffInWeeks} week${diffInWeeks > 1 ? 's' : ''} ago`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">Error loading projects: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-6 py-8">
@@ -127,7 +147,7 @@ const WorkspaceGrid = () => {
               <Globe className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">4</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               <p className="text-gray-600">Total Projects</p>
             </div>
           </div>
@@ -143,7 +163,7 @@ const WorkspaceGrid = () => {
               <Code className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">2</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.published}</p>
               <p className="text-gray-600">Published</p>
             </div>
           </div>
@@ -159,7 +179,7 @@ const WorkspaceGrid = () => {
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">2</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.thisWeek}</p>
               <p className="text-gray-600">This Week</p>
             </div>
           </div>
@@ -171,100 +191,78 @@ const WorkspaceGrid = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
       >
-        {mockProjects.map((project) => (
-          <motion.div
-            key={project.id}
-            variants={itemVariants}
-            whileHover={{ scale: 1.02, y: -4 }}
-            className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group"
-          >
-            {/* Project Thumbnail */}
-            <div className="h-48 bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 relative overflow-hidden">
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-pink-400/20"
-                animate={{
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut" as const,
-                }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg"
-                >
-                  <Globe className="w-8 h-8 text-gray-700" />
-                </motion.div>
+        {/* Create New Project Card */}
+        <motion.div variants={itemVariants}>
+          <Link href="/create">
+            <div className="group relative bg-white rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 transition-all duration-300 cursor-pointer h-64 flex flex-col items-center justify-center">
+              <div className="text-gray-400 group-hover:text-blue-500 transition-colors duration-300">
+                <Plus size={48} />
               </div>
-              
-              {/* Status Badge */}
-              <div className="absolute top-4 right-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
-                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                </span>
-              </div>
-            </div>
-
-            {/* Project Info */}
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {project.name}
-                </h3>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4 text-gray-500" />
-                </motion.button>
-              </div>
-              
-              <p className="text-gray-600 mb-4 line-clamp-2">
-                {project.description}
+              <h3 className="mt-4 text-lg font-semibold text-gray-600 group-hover:text-blue-600 transition-colors duration-300">
+                Create New Project
+              </h3>
+              <p className="mt-2 text-sm text-gray-500 text-center px-4">
+                Start building your next amazing website
               </p>
-              
-              <div className="flex justify-between items-center text-sm text-gray-500">
-                <span>Modified {project.lastModified}</span>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  View →
-                </motion.button>
-              </div>
             </div>
+          </Link>
+        </motion.div>
+
+        {/* Project Cards */}
+        {projects.map((project: Project) => (
+          <motion.div key={project.id} variants={itemVariants}>
+            <Link href={`/workspace/${project.id}`}>
+              <div className="group relative bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer h-64 overflow-hidden">
+                {/* Thumbnail */}
+                <div className="h-32 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-between p-4">
+                  <div className="flex items-center space-x-2">
+                    <FileCode className="text-blue-400" size={24} />
+                    <span className="text-sm text-blue-600 font-medium">
+                      {project.files?.length || 0} files
+                    </span>
+                  </div>
+                  {project.chat_messages && project.chat_messages.length > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <MessageSquare className="text-green-400" size={16} />
+                      <span className="text-xs text-green-600">
+                        {project.chat_messages.length}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="px-2 py-1 text-xs font-medium rounded-full border bg-green-100 text-green-700 border-green-200">
+                      Active
+                    </span>
+                    <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1 hover:bg-gray-100 rounded">
+                      <MoreVertical size={16} className="text-gray-400" />
+                    </button>
+                  </div>
+
+                  {/* Project Info */}
+                  <h3 className="font-semibold text-gray-900 mb-1 truncate">
+                    {project.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {project.description || 'No description available'}
+                  </p>
+
+                  {/* Last Modified */}
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Calendar size={12} className="mr-1" />
+                    {formatTimeAgo(project.updated_at)}
+                  </div>
+                </div>
+              </div>
+            </Link>
           </motion.div>
         ))}
-
-        {/* Add New Project Card */}
-        <Link href="/create">
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            className="bg-white/60 backdrop-blur-sm border-2 border-dashed border-gray-300 rounded-2xl h-full min-h-[320px] flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-all group cursor-pointer"
-          >
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 90 }}
-              transition={{ duration: 0.3 }}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 rounded-full mb-4 group-hover:shadow-lg transition-all"
-            >
-              <Plus className="w-8 h-8 text-white" />
-            </motion.div>
-            <h3 className="text-xl font-semibold mb-2">Create New Project</h3>
-            <p className="text-center px-6">
-              Start building your next amazing website with CodeCraft AI
-            </p>
-          </motion.div>
-        </Link>
       </motion.div>
     </div>
   );
