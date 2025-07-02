@@ -82,7 +82,7 @@ const CreateInterface = () => {
       {/* Chat Panel */}
       <motion.div
         variants={itemVariants}
-        className="w-1/2 border-r border-gray-200/50 bg-white/80 backdrop-blur-sm flex flex-col"
+        className="w-1/3 border-r border-gray-200/50 bg-white/80 backdrop-blur-sm flex flex-col"
       >
         {/* Chat Header */}
         <div className="p-6 border-b border-gray-200/50">
@@ -173,7 +173,7 @@ const CreateInterface = () => {
       {/* Code Editor Panel */}
       <motion.div
         variants={itemVariants}
-        className="w-1/2 bg-gray-50/80 backdrop-blur-sm flex flex-col"
+        className="w-2/3 bg-gray-50/80 backdrop-blur-sm flex flex-col"
       >
         {/* Editor Header */}
         <div className="p-6 border-b border-gray-200/50 bg-white/80">
