@@ -6,13 +6,17 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "dev:convex": "convex dev",
+    "deploy:convex": "convex deploy",
+    "dev:all": "concurrently \"bun run dev\" \"bun run dev:convex\""
   },
   "dependencies": {
     "@clerk/nextjs": "^6.23.2",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "concurrently": "^9.2.0",
     "convex": "^1.25.2",
     "dedent": "^1.6.0",
     "framer-motion": "^12.23.0",

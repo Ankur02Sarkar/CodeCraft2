@@ -2,8 +2,13 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+from endpoints.user_endpoints import router as user_router
 
-app = FastAPI()
+app = FastAPI(
+    title="CodeCraft API",
+    description="AI-powered code generation platform API",
+    version="1.0.0"
+)
 
 # CORS middleware
 app.add_middleware(
@@ -48,6 +53,9 @@ async def update_item(item_id: int, item: Item):
 @app.delete("/items/{item_id}")
 async def delete_item(item_id: int):
     return {"message": f"Item {item_id} deleted"}
+
+# Include user router
+app.include_router(user_router)
 
 # Health check endpoint (optional, but good for Vercel)
 @app.get("/health")
