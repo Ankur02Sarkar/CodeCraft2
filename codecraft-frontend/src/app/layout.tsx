@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Header } from "@/components/Header";
+import { UserSync } from "@/components/UserSync";
 import { ConvexClientProvider } from "@/providers/ConvexProvider";
 import "./globals.css";
 
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <ConvexClientProvider>
+        <UserSync />
         <html lang="en">
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20 min-h-screen`}
@@ -37,6 +39,6 @@ export default function RootLayout({
           </body>
         </html>
       </ConvexClientProvider>
-    </ClerkProvider>
-  );
-}
+      </ClerkProvider>
+    );
+  }
